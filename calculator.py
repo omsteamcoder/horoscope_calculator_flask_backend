@@ -252,7 +252,6 @@ def horoscope():
     try:
         # Extract input
         data = request.json
-        print(data)
         name = data.get("name")
         place = data.get("place")
         birth_date = data.get("date")
