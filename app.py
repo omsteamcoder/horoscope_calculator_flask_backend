@@ -1,11 +1,17 @@
+import time
+import os
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import __version__ as flask_version
+from flask_cors import CORS,cross_origin
 from kerykeion import AstrologicalSubject
 from datetime import datetime, timedelta
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
 from functools import lru_cache
 from math import fabs
+import traceback
+
+START_TIME = time.time()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS
@@ -637,6 +643,7 @@ def get_nakshatra_pada(position):
 
 # Horoscope API Endpoint
 @app.route('/horoscope', methods=['POST'])
+@cross_origin()
 def horoscope():
     try:
         # Extract input
@@ -741,9 +748,15 @@ def horoscope():
         return jsonify(response)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        tb = traceback.format_exc()
+        print("ERROR TRACEBACK:\n", tb)  # Print to console
+        return jsonify({
+            "error": str(e),
+            "traceback": tb
+        }), 500
 
 @app.route('/dosham', methods=['POST'])
+@cross_origin()
 def dosham_endpoint():
     try:
         data = request.get_json()
@@ -752,7 +765,24 @@ def dosham_endpoint():
         result = calculate_doshams(data)
         return jsonify(result)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        tb = traceback.format_exc()
+        print("ERROR TRACEBACK:\n", tb)  # Print to console
+        return jsonify({
+            "error": str(e),
+            "traceback": tb
+        }), 500
+
+
+@app.route('/status', methods=['GET'])
+@cross_origin()
+def server_status():
+    uptime_seconds = round(time.time() - START_TIME)
+    return jsonify({
+        "message": "Server is up and running",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "uptime_seconds": uptime_seconds,
+        "flask_version": flask_version,
+    })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5004)
